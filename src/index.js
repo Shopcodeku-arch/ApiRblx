@@ -1,63 +1,46 @@
 export default {
   async fetch(request, env, ctx) {
+    const url = new URL(request.url);
+    const username = url.searchParams.get("username");
+
+    // Header CORS agar API bisa diakses dari web lain
     const corsHeaders = {
       "Access-Control-Allow-Origin": "*",
-      "Access-Control-Allow-Methods": "GET, HEAD, POST, OPTIONS",
+      "Access-Control-Allow-Methods": "GET, OPTIONS",
       "Access-Control-Allow-Headers": "Content-Type",
+      "Content-Type": "application/json",
     };
 
     if (request.method === "OPTIONS") {
       return new Response(null, { headers: corsHeaders });
     }
 
-    const { searchParams } = new URL(request.url);
-    const keyword = searchParams.get("keyword");
-
-    if (!keyword) {
+    if (!username) {
       return new Response(
-        JSON.stringify({ error: "Missing required 'keyword' query parameter" }), 
-        { 
-          status: 400, 
-          headers: { ...corsHeaders, "Content-Type": "application/json" } 
-        }
+        JSON.stringify({ error: "Parameter 'username' wajib diisi. Contoh: ?animasi=1 atau ?username=Roblox" }),
+        { status: 400, headers: corsHeaders }
       );
     }
 
     try {
-      // PERBAIKAN: Menggunakan backtick (`) dan URL resmi pencarian Roblox yang benar
-      const robloxApiUrl = `https://roblox.com{encodeURIComponent(keyword)}&limit=10`;
+      // Memanggil API resmi Roblox User Search
+      const robloxRes = await fetch(`https://users.roblox.com/v1/users/search?keyword=${encodeURIComponent(username)}&limit=10`);
       
-      const robloxResponse = await fetch(robloxApiUrl, {
-        method: "GET",
-        headers: {
-          "User-Agent": "CloudflareWorker-RobloxSearchAPI/1.0",
-          "Accept": "application/json"
-        }
-      });
-
-      if (!robloxResponse.ok) {
-        return new Response(
-          JSON.stringify({ error: "Roblox API responded with an error" }), 
-          { 
-            status: robloxResponse.status, 
-            headers: { ...corsHeaders, "Content-Type": "application/json" } 
-          }
-        );
+      if (!robloxRes.ok) {
+        throw new Error("Gagal terhubung ke server Roblox");
       }
 
-      const data = await robloxResponse.json();
-      return new Response(JSON.stringify(data), {
+      const data = await robloxRes.json();
+
+      return new Response(JSON.stringify({ success: true, data: data.data }), {
         status: 200,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: corsHeaders,
       });
 
-    } catch (error) {
+    } catch (err) {
       return new Response(
-        JSON.stringify({ error: "Internal Server Error", message: error.message }), 
-        { 
-          status: 500, 
-          headers: { ...corsHeaders, "Content-Type": "application/json" } 
-        }
+        JSON.stringify({ success: false, error: err.message }),
+        { status: 500, headers: corsHeaders }
       );
     }
   },
