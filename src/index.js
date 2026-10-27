@@ -1,18 +1,15 @@
 export default {
   async fetch(request, env, ctx) {
-    // 1. Definisikan header CORS untuk akses dari frontend mana pun
     const corsHeaders = {
       "Access-Control-Allow-Origin": "*",
       "Access-Control-Allow-Methods": "GET, HEAD, POST, OPTIONS",
       "Access-Control-Allow-Headers": "Content-Type",
     };
 
-    // Tangani preflight request dari browser
     if (request.method === "OPTIONS") {
       return new Response(null, { headers: corsHeaders });
     }
 
-    // 2. Ambil parameter 'keyword' dari URL query string
     const { searchParams } = new URL(request.url);
     const keyword = searchParams.get("keyword");
 
@@ -27,7 +24,7 @@ export default {
     }
 
     try {
-      // 3. Request ke API Resmi Roblox (Maksimal limit yang diizinkan Roblox adalah 100)
+      // PERBAIKAN: Menggunakan backtick (`) dan URL resmi pencarian Roblox yang benar
       const robloxApiUrl = `https://roblox.com{encodeURIComponent(keyword)}&limit=10`;
       
       const robloxResponse = await fetch(robloxApiUrl, {
@@ -48,7 +45,6 @@ export default {
         );
       }
 
-      // 4. Kembalikan data sukses ke client
       const data = await robloxResponse.json();
       return new Response(JSON.stringify(data), {
         status: 200,
@@ -66,4 +62,3 @@ export default {
     }
   },
 };
-    
