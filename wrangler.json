@@ -1,6 +1,6 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "roblox-user-search-api",
+  "name": "apirblx",
   "main": "src/index.js",
-  "compatibility_date": "2026-10-27"
+  "compatibility_date": "2026-10-28"
 }
